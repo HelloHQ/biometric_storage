@@ -252,10 +252,13 @@ class BiometricStorageFile {
       return;
     }
     query[kSecMatchLimit as String] = kSecMatchLimitOne
-    query[kSecUseOperationPrompt as String] = promptInfo.accessTitle
     query[kSecReturnAttributes as String] = true
     query[kSecReturnData as String] = true
-    query[kSecUseAuthenticationContext as String] = context
+    let authenticationContext = context
+    if let accessTitle = promptInfo.accessTitle {
+      authenticationContext.localizedReason = accessTitle
+    }
+    query[kSecUseAuthenticationContext as String] = authenticationContext
     
     var item: CFTypeRef?
     
@@ -303,12 +306,13 @@ class BiometricStorageFile {
     }
 
     if (initOptions.authenticationRequired) {
-      query.merge([
-        kSecUseAuthenticationContext as String: context,
-      ]) { (_, new) in new }
+      let authenticationContext = context
       if let operationPrompt = promptInfo.saveTitle {
-        query[kSecUseOperationPrompt as String] = operationPrompt
+        authenticationContext.localizedReason = operationPrompt
       }
+      query.merge([
+        kSecUseAuthenticationContext as String: authenticationContext,
+      ]) { (_, new) in new }
     } else {
       hpdebug("No authentication required for \(name)")
     }
